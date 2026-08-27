@@ -1,0 +1,1 @@
+-- No seed data. Boards are created on first visit.
