@@ -631,12 +631,9 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
                 style={{ left: cursor.x, top: cursor.y }}
               >
                 <svg width="18" height="22" viewBox="0 0 18 22" aria-hidden>
-                  <path d="M1 1 L1 18 L6 13 L11 21 L14 19 L9 12 L17 12 Z" fill={cursor.color} stroke="#1c1814" />
+                  <path d="M1 1 L1 18 L6 13 L11 21 L14 19 L9 12 L17 12 Z" fill={cursor.color} stroke="#FFFFFF" />
                 </svg>
-                <span
-                  className="ml-3 rounded-full px-2 py-0.5 text-[11px] font-medium text-white shadow"
-                  style={{ background: cursor.color }}
-                >
+                <span className="ml-3 rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-[#111111] shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
                   {cursor.name}
                 </span>
               </div>

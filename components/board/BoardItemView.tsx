@@ -5,6 +5,10 @@ import { FONT_OPTIONS } from "@/lib/constants"
 import { pointsToPath, strokeStyle } from "@/lib/drawing"
 import type { BoardItem, Stroke } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { chromeShadow } from "./chrome"
+
+const cardShadow = chromeShadow
+const selectedRing = "ring-2 ring-[#FF6B00] ring-offset-4 ring-offset-[#F5F5F5]"
 
 function Editable({
   value,
@@ -69,6 +73,7 @@ export function BoardItemView({
         "absolute touch-none",
         selected && "z-20",
         item.type === "drawing" ? "pointer-events-none" : "pointer-events-auto",
+        selected && item.type === "drawing" && selectedRing,
       )}
       style={{
         left: item.x,
@@ -80,31 +85,27 @@ export function BoardItemView({
       onPointerDown={onSelect}
     >
       {item.type === "text" ? (
-        <Editable
-          value={String(payload.content || "")}
-          readOnly={readOnly}
-          onCommit={onCommitText}
-          className={cn("h-full w-full outline-none", selected && "ring-2 ring-amber-400/80")}
-          style={{
-            color: String(payload.color || "#1c1917"),
-            fontFamily: font?.css,
-            fontSize: Number(payload.fontSize || 28),
-            fontWeight: String(payload.fontWeight || "400"),
-            lineHeight: 1.15,
-          }}
-        />
+        <div className={cn("h-full w-full rounded-[20px] bg-white p-3", cardShadow, selected && selectedRing)}>
+          <Editable
+            value={String(payload.content || "")}
+            readOnly={readOnly}
+            onCommit={onCommitText}
+            className="h-full w-full outline-none"
+            style={{
+              color: String(payload.color || "#1c1917"),
+              fontFamily: font?.css,
+              fontSize: Number(payload.fontSize || 28),
+              fontWeight: String(payload.fontWeight || "400"),
+              lineHeight: 1.15,
+            }}
+          />
+        </div>
       ) : null}
 
       {item.type === "sticky" ? (
         <div
-          className={cn(
-            "h-full w-full p-3 shadow-[4px_8px_16px_rgba(0,0,0,0.18)]",
-            selected && "ring-2 ring-amber-400/80",
-          )}
-          style={{
-            background: String(payload.color || "#fde68a"),
-            transform: "rotate(-1.2deg)",
-          }}
+          className={cn("h-full w-full rounded-[20px] p-3", cardShadow, selected && selectedRing)}
+          style={{ background: String(payload.color || "#fde68a") }}
         >
           <Editable
             value={String(payload.content || "")}
@@ -122,14 +123,15 @@ export function BoardItemView({
           target="_blank"
           rel="noreferrer"
           className={cn(
-            "flex h-full w-full flex-col overflow-hidden rounded-xl bg-white shadow-lg",
-            selected && "ring-2 ring-amber-400/80",
+            "flex h-full w-full flex-col overflow-hidden rounded-[20px] bg-white",
+            cardShadow,
+            selected && selectedRing,
           )}
           onPointerDown={(event) => event.preventDefault()}
         >
           {payload.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={String(payload.image)} alt="" className="h-28 w-full object-cover" />
+            <img src={String(payload.image)} alt="" className="h-28 w-full rounded-t-[20px] object-cover" />
           ) : (
             <div className="flex h-28 items-center justify-center bg-stone-100 text-stone-400">Link</div>
           )}
@@ -141,37 +143,54 @@ export function BoardItemView({
       ) : null}
 
       {item.type === "image" ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={String(payload.url || "")}
-          alt={String(payload.name || "Photo")}
-          className={cn("h-full w-full rounded-md object-cover shadow-lg", selected && "ring-2 ring-amber-400/80")}
-          draggable={false}
-        />
+        <div
+          className={cn(
+            "h-full w-full overflow-hidden rounded-[20px] bg-white p-0.5",
+            cardShadow,
+            selected && selectedRing,
+          )}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={String(payload.url || "")}
+            alt={String(payload.name || "Photo")}
+            className="h-full w-full rounded-[18px] object-cover"
+            draggable={false}
+          />
+        </div>
       ) : null}
 
       {item.type === "video" ? (
-        payload.embed ? (
-          <iframe
-            src={String(payload.embed)}
-            title="Video"
-            className={cn("h-full w-full rounded-md shadow-lg", selected && "ring-2 ring-amber-400/80")}
-            allow="autoplay; encrypted-media"
-          />
-        ) : (
-          <video
-            src={String(payload.url || "")}
-            controls
-            className={cn("h-full w-full rounded-md bg-black shadow-lg", selected && "ring-2 ring-amber-400/80")}
-          />
-        )
+        <div
+          className={cn(
+            "h-full w-full overflow-hidden rounded-[20px] bg-white p-0.5",
+            cardShadow,
+            selected && selectedRing,
+          )}
+        >
+          {payload.embed ? (
+            <iframe
+              src={String(payload.embed)}
+              title="Video"
+              className="h-full w-full rounded-[18px] object-cover"
+              allow="autoplay; encrypted-media"
+            />
+          ) : (
+            <video
+              src={String(payload.url || "")}
+              controls
+              className="h-full w-full rounded-[18px] object-cover"
+            />
+          )}
+        </div>
       ) : null}
 
       {item.type === "audio" ? (
         <div
           className={cn(
-            "flex h-full items-center rounded-xl bg-[#2a2420] px-3 shadow-lg",
-            selected && "ring-2 ring-amber-400/80",
+            "flex h-full items-center rounded-[20px] bg-white px-3",
+            cardShadow,
+            selected && selectedRing,
           )}
         >
           <audio src={String(payload.url || "")} controls className="w-full" />
@@ -196,7 +215,7 @@ export function BoardItemView({
       ) : null}
 
       {selected && item.type !== "drawing" ? (
-        <span className="absolute right-0 bottom-0 size-3 cursor-nwse-resize bg-amber-300" data-resize="1" />
+        <span className="absolute right-0 bottom-0 size-3 cursor-nwse-resize rounded-sm bg-[#FF6B00]" data-resize="1" />
       ) : null}
     </div>
   )
