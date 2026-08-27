@@ -2,6 +2,7 @@ import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
   DEFAULT_ZOOM,
+  FOCUS_PADDING_PX,
   MAX_ZOOM,
   MIN_ZOOM,
   PAN_MARGIN,
@@ -88,4 +89,88 @@ export function zoomAround(
 export function defaultView(viewportWidth: number, viewportHeight: number) {
   const zoom = clampZoom(DEFAULT_ZOOM)
   return { zoom, pan: centerPan(zoom, viewportWidth, viewportHeight) }
+}
+
+export type ViewState = {
+  pan: { x: number; y: number }
+  zoom: number
+}
+
+/** Approximates CSS cubic-bezier(0.22, 1, 0.36, 1). */
+export function easePalmer(t: number) {
+  const x = clamp(t, 0, 1)
+  return 1 - (1 - x) ** 4
+}
+
+export function lerpView(from: ViewState, to: ViewState, t: number): ViewState {
+  return {
+    zoom: from.zoom + (to.zoom - from.zoom) * t,
+    pan: {
+      x: from.pan.x + (to.pan.x - from.pan.x) * t,
+      y: from.pan.y + (to.pan.y - from.pan.y) * t,
+    },
+  }
+}
+
+function itemScreenRect(
+  item: { x: number; y: number; width: number; height: number },
+  view: ViewState,
+) {
+  const left = view.pan.x + item.x * view.zoom
+  const top = view.pan.y + item.y * view.zoom
+  return {
+    left,
+    top,
+    right: left + item.width * view.zoom,
+    bottom: top + item.height * view.zoom,
+  }
+}
+
+export function focusViewForItem(
+  item: { x: number; y: number; width: number; height: number },
+  current: ViewState,
+  viewport: { w: number; h: number },
+): ViewState {
+  const pad = FOCUS_PADDING_PX
+  const rect = itemScreenRect(item, current)
+  const padded =
+    rect.left >= pad &&
+    rect.top >= pad &&
+    rect.right <= viewport.w - pad &&
+    rect.bottom <= viewport.h - pad
+  if (padded) return current
+
+  const fullyOnscreen =
+    rect.left >= 0 &&
+    rect.top >= 0 &&
+    rect.right <= viewport.w &&
+    rect.bottom <= viewport.h
+  if (fullyOnscreen) {
+    let panX = current.pan.x
+    let panY = current.pan.y
+    if (rect.left < pad) panX += pad - rect.left
+    if (rect.top < pad) panY += pad - rect.top
+    if (rect.right > viewport.w - pad) panX -= rect.right - (viewport.w - pad)
+    if (rect.bottom > viewport.h - pad) panY -= rect.bottom - (viewport.h - pad)
+    return {
+      zoom: current.zoom,
+      pan: clampPan(panX, panY, current.zoom, viewport.w, viewport.h),
+    }
+  }
+
+  const fitZoom = Math.min(
+    (viewport.w - pad * 2) / item.width,
+    (viewport.h - pad * 2) / item.height,
+  )
+  const zoom = clamp(fitZoom, current.zoom, MAX_ZOOM)
+  return {
+    zoom,
+    pan: clampPan(
+      viewport.w / 2 - (item.x + item.width / 2) * zoom,
+      viewport.h / 2 - (item.y + item.height / 2) * zoom,
+      zoom,
+      viewport.w,
+      viewport.h,
+    ),
+  }
 }
