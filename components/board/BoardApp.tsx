@@ -64,6 +64,7 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
   const viewRef = useRef({ pan, zoom })
   viewRef.current = { pan, zoom }
   const pointerMovedRef = useRef(false)
+  const clickFocusIdRef = useRef<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const dragRef = useRef<{
     mode: "pan" | "item" | "resize" | "draw"
@@ -357,6 +358,7 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
     if (timelapse) return
     pointerMovedRef.current = false
+    clickFocusIdRef.current = null
     const point = screenToBoard(event.clientX, event.clientY)
     const target = event.target as HTMLElement
     const itemEl = target.closest<HTMLElement>("[data-item-id]")
@@ -383,7 +385,10 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
       if (!item) return
       setSelectedId(id)
       if (readOnly) return
-      if (target.isContentEditable && !resize) return
+      if (target.isContentEditable && !resize) {
+        clickFocusIdRef.current = id
+        return
+      }
       cancelViewAnim()
       void patchItem(id, { z_index: Math.max(...itemsRef.current.map((row) => row.z_index), 0) + 1 }, false)
       dragRef.current = {
@@ -505,13 +510,26 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
   async function onPointerUp() {
     const drag = dragRef.current
     dragRef.current = null
+    const clickFocusId = clickFocusIdRef.current
+    clickFocusIdRef.current = null
+    const focusId =
+      !pointerMovedRef.current && !readOnly
+        ? drag?.mode === "item" && drag.id
+          ? drag.id
+          : clickFocusId
+        : null
+    if (focusId) {
+      const item = itemsRef.current.find((row) => row.id === focusId)
+      const { w, h } = viewportSize()
+      if (item) animateToView(focusViewForItem(item, viewRef.current, { w, h }))
+    }
     if (drag?.mode === "item" && drag.id) {
       const item = itemsRef.current.find((row) => row.id === drag.id)
-      if (item) await patchItem(item.id, { x: item.x, y: item.y }, true)
+      if (item) void patchItem(item.id, { x: item.x, y: item.y }, true)
     }
     if (drag?.mode === "resize" && drag.id) {
       const item = itemsRef.current.find((row) => row.id === drag.id)
-      if (item) await patchItem(item.id, { width: item.width, height: item.height }, true)
+      if (item) void patchItem(item.id, { width: item.width, height: item.height }, true)
     }
     if (drag?.mode === "draw" && liveStrokeRef.current) {
       const strokes = [liveStrokeRef.current]
@@ -527,11 +545,6 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
       liveStrokeRef.current = null
       setLiveStroke(null)
       signal({ kind: "ink", stroke: null })
-    }
-    if (drag?.mode === "item" && drag.id && !pointerMovedRef.current && !readOnly) {
-      const item = itemsRef.current.find((row) => row.id === drag.id)
-      const { w, h } = viewportSize()
-      if (item) animateToView(focusViewForItem(item, viewRef.current, { w, h }))
     }
   }
 
