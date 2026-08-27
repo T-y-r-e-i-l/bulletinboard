@@ -24,6 +24,13 @@ describe("lerpView", () => {
       zoom: 0.625,
     })
   })
+
+  it("clamps t to [0, 1]", () => {
+    const from: ViewState = { pan: { x: 0, y: 0 }, zoom: 0.5 }
+    const to: ViewState = { pan: { x: 100, y: 40 }, zoom: 1 }
+    expect(lerpView(from, to, -1)).toEqual(from)
+    expect(lerpView(from, to, 2)).toEqual(to)
+  })
 })
 
 describe("focusViewForItem", () => {

@@ -65,6 +65,7 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
   viewRef.current = { pan, zoom }
   const pointerMovedRef = useRef(false)
   const clickFocusIdRef = useRef<string | null>(null)
+  const clickFocusOriginRef = useRef<{ x: number; y: number } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const dragRef = useRef<{
     mode: "pan" | "item" | "resize" | "draw"
@@ -359,6 +360,7 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
     if (timelapse) return
     pointerMovedRef.current = false
     clickFocusIdRef.current = null
+    clickFocusOriginRef.current = null
     const point = screenToBoard(event.clientX, event.clientY)
     const target = event.target as HTMLElement
     const itemEl = target.closest<HTMLElement>("[data-item-id]")
@@ -387,6 +389,7 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
       if (readOnly) return
       if (target.isContentEditable && !resize) {
         clickFocusIdRef.current = id
+        clickFocusOriginRef.current = { x: event.clientX, y: event.clientY }
         return
       }
       cancelViewAnim()
@@ -507,13 +510,18 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
     }
   }
 
-  async function onPointerUp() {
+  async function onPointerUp(event: PointerEvent<HTMLDivElement>) {
     const drag = dragRef.current
     dragRef.current = null
     const clickFocusId = clickFocusIdRef.current
+    const clickFocusOrigin = clickFocusOriginRef.current
     clickFocusIdRef.current = null
+    clickFocusOriginRef.current = null
+    const clickFocusMoved =
+      clickFocusOrigin != null &&
+      Math.hypot(event.clientX - clickFocusOrigin.x, event.clientY - clickFocusOrigin.y) > 4
     const focusId =
-      !pointerMovedRef.current && !readOnly
+      !pointerMovedRef.current && !clickFocusMoved && !readOnly
         ? drag?.mode === "item" && drag.id
           ? drag.id
           : clickFocusId

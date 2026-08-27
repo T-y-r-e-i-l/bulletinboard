@@ -103,11 +103,12 @@ export function easePalmer(t: number) {
 }
 
 export function lerpView(from: ViewState, to: ViewState, t: number): ViewState {
+  const k = clamp(t, 0, 1)
   return {
-    zoom: from.zoom + (to.zoom - from.zoom) * t,
+    zoom: from.zoom + (to.zoom - from.zoom) * k,
     pan: {
-      x: from.pan.x + (to.pan.x - from.pan.x) * t,
-      y: from.pan.y + (to.pan.y - from.pan.y) * t,
+      x: from.pan.x + (to.pan.x - from.pan.x) * k,
+      y: from.pan.y + (to.pan.y - from.pan.y) * k,
     },
   }
 }

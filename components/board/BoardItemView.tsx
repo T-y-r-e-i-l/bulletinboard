@@ -172,7 +172,7 @@ export function BoardItemView({
             <iframe
               src={String(payload.embed)}
               title="Video"
-              className="h-full w-full rounded-[18px] object-cover"
+              className="h-full w-full rounded-[18px]"
               allow="autoplay; encrypted-media"
             />
           ) : (

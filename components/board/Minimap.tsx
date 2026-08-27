@@ -116,7 +116,7 @@ export function Minimap({
             left: remote.x * scaleX - 3,
             top: remote.y * scaleY - 3,
             background: remote.color,
-            boxShadow: "0 0 0 1px rgba(28,24,20,0.4)",
+            boxShadow: "0 0 0 1px #FFFFFF, 0 0 0 2px rgba(0,0,0,0.1)",
           }}
         />
       ))}
