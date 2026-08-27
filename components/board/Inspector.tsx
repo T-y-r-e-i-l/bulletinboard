@@ -7,6 +7,7 @@ import { Slider } from "@/components/ui/slider"
 import { BRUSHES, FONT_OPTIONS, FONT_WEIGHTS, STICKY_COLORS } from "@/lib/constants"
 import type { BoardItem, Tool } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { chromeCard } from "./chrome"
 
 export function Inspector({
   tool,
@@ -34,7 +35,7 @@ export function Inspector({
   if (tool === "draw" && !selected) {
     return (
       <Panel>
-        <p className="text-[11px] tracking-wide text-stone-400 uppercase">Brush</p>
+        <p className="text-[11px] tracking-wide text-[#8E8E93] uppercase">Brush</p>
         <div className="mt-2 flex gap-1">
           {BRUSHES.map((brush) => (
             <Button
@@ -48,7 +49,7 @@ export function Inspector({
             </Button>
           ))}
         </div>
-        <label className="mt-3 block text-[11px] text-stone-400 uppercase">Size</label>
+        <label className="mt-3 block text-[11px] tracking-wide text-[#8E8E93] uppercase">Size</label>
         <Slider
           className="mt-2"
           min={2}
@@ -56,12 +57,12 @@ export function Inspector({
           value={[drawSize]}
           onValueChange={(value) => onDrawSize(value[0] ?? 4)}
         />
-        <label className="mt-3 block text-[11px] text-stone-400 uppercase">Color</label>
+        <label className="mt-3 block text-[11px] tracking-wide text-[#8E8E93] uppercase">Color</label>
         <input
           type="color"
           value={drawColor}
           onChange={(event) => onDrawColor(event.target.value)}
-          className="mt-2 h-8 w-full cursor-pointer rounded border border-white/10 bg-transparent"
+          className="mt-2 h-8 w-full cursor-pointer rounded border border-black/10 bg-transparent"
         />
       </Panel>
     )
@@ -73,9 +74,9 @@ export function Inspector({
     <Panel>
       {selected.type === "text" ? (
         <>
-          <p className="text-[11px] tracking-wide text-stone-400 uppercase">Text</p>
+          <p className="text-[11px] tracking-wide text-[#8E8E93] uppercase">Text</p>
           <select
-            className="mt-2 w-full rounded-md border border-white/10 bg-[#2a2420] px-2 py-1.5 text-sm"
+            className="mt-2 w-full rounded-md border border-black/10 bg-[#F5F5F5] px-2 py-1.5 text-sm text-[#111111]"
             value={String(selected.payload.fontFamily || "sans")}
             onChange={(event) => onChangePayload({ fontFamily: event.target.value })}
           >
@@ -86,7 +87,7 @@ export function Inspector({
             ))}
           </select>
           <select
-            className="mt-2 w-full rounded-md border border-white/10 bg-[#2a2420] px-2 py-1.5 text-sm"
+            className="mt-2 w-full rounded-md border border-black/10 bg-[#F5F5F5] px-2 py-1.5 text-sm text-[#111111]"
             value={String(selected.payload.fontWeight || "400")}
             onChange={(event) => onChangePayload({ fontWeight: event.target.value })}
           >
@@ -96,7 +97,7 @@ export function Inspector({
               </option>
             ))}
           </select>
-          <label className="mt-3 block text-[11px] text-stone-400 uppercase">Size</label>
+          <label className="mt-3 block text-[11px] tracking-wide text-[#8E8E93] uppercase">Size</label>
           <Slider
             className="mt-2"
             min={14}
@@ -104,19 +105,19 @@ export function Inspector({
             value={[Number(selected.payload.fontSize || 28)]}
             onValueChange={(value) => onChangePayload({ fontSize: value[0] ?? 28 })}
           />
-          <label className="mt-3 block text-[11px] text-stone-400 uppercase">Color</label>
+          <label className="mt-3 block text-[11px] tracking-wide text-[#8E8E93] uppercase">Color</label>
           <input
             type="color"
             value={String(selected.payload.color || "#1c1917")}
             onChange={(event) => onChangePayload({ color: event.target.value })}
-            className="mt-2 h-8 w-full cursor-pointer rounded border border-white/10 bg-transparent"
+            className="mt-2 h-8 w-full cursor-pointer rounded border border-black/10 bg-transparent"
           />
         </>
       ) : null}
 
       {selected.type === "sticky" ? (
         <>
-          <p className="text-[11px] tracking-wide text-stone-400 uppercase">Sticky color</p>
+          <p className="text-[11px] tracking-wide text-[#8E8E93] uppercase">Sticky color</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {STICKY_COLORS.map((color) => (
               <button
@@ -126,7 +127,7 @@ export function Inspector({
                 onClick={() => onChangePayload({ color })}
                 className={cn(
                   "size-7 rounded-md border border-black/10 shadow-sm",
-                  selected.payload.color === color && "ring-2 ring-amber-200",
+                  selected.payload.color === color && "ring-2 ring-[#FF6B00]",
                 )}
                 style={{ background: color }}
               />
@@ -135,7 +136,7 @@ export function Inspector({
         </>
       ) : null}
 
-      <Button variant="destructive" size="sm" className="mt-4 w-full" onClick={onDelete}>
+      <Button variant="ghost" size="sm" className="mt-4 w-full text-[#8E8E93] hover:bg-black/5 hover:text-[#111111]" onClick={onDelete}>
         <Trash2 />
         Remove
       </Button>
@@ -145,7 +146,7 @@ export function Inspector({
 
 function Panel({ children }: { children: ReactNode }) {
   return (
-    <aside className="pointer-events-auto absolute top-24 right-4 z-30 w-56 rounded-2xl border border-white/10 bg-[#1c1814]/90 p-3 text-stone-100 shadow-xl backdrop-blur-md">
+    <aside className={`pointer-events-auto absolute top-24 right-4 z-30 w-56 ${chromeCard} p-3 text-[#111111]`}>
       {children}
     </aside>
   )

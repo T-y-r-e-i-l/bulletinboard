@@ -665,7 +665,7 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
             value={urlValue}
             onChange={(event) => setUrlValue(event.target.value)}
             placeholder="https://"
-            className="w-full rounded-md border border-border bg-background px-3 py-2"
+            className="w-full rounded-[20px] border border-black/10 bg-white px-3 py-2 text-[#111111]"
           />
           <Button
             onClick={() => {

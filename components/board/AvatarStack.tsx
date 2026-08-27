@@ -15,8 +15,8 @@ export function AvatarStack({ users }: { users: PresenceUser[] }) {
           <TooltipTrigger asChild>
             <div
               className={cn(
-                "relative flex size-9 items-center justify-center rounded-full border-2 border-[#1c1814] text-base shadow-md",
-                user.self && "ring-2 ring-amber-200/80",
+                "relative flex size-9 items-center justify-center rounded-full border-2 border-white text-base shadow-md",
+                user.self && "ring-2 ring-[#FF6B00]",
               )}
               style={{
                 background: user.color,
@@ -34,7 +34,7 @@ export function AvatarStack({ users }: { users: PresenceUser[] }) {
         </Tooltip>
       ))}
       {extra > 0 ? (
-        <div className="relative z-0 -ml-2 flex size-9 items-center justify-center rounded-full border-2 border-[#1c1814] bg-stone-700 text-xs font-medium text-stone-100">
+        <div className="relative z-0 -ml-2 flex size-9 items-center justify-center rounded-full border-2 border-white bg-[#F5F5F5] text-xs font-medium text-[#111111]">
           +{extra}
         </div>
       ) : null}

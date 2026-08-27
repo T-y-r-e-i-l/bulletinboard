@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import type { Tool } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { chromePill } from "./chrome"
 
 const TOOLS: { id: Tool; label: string; icon: typeof Type }[] = [
   { id: "select", label: "Select", icon: MousePointer2 },
@@ -37,7 +38,7 @@ export function Toolbar({
 }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-5 z-30 flex justify-center">
-      <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-white/10 bg-[#1c1814]/90 p-1.5 shadow-2xl backdrop-blur-md">
+      <div className={`pointer-events-auto flex items-center gap-1 ${chromePill} p-1.5`}>
         {TOOLS.map((item) => {
           const Icon = item.icon
           const active = tool === item.id
@@ -50,8 +51,8 @@ export function Toolbar({
                   disabled={disabled}
                   onClick={() => onTool(item.id)}
                   className={cn(
-                    "size-10 rounded-full text-stone-200 hover:bg-white/10 hover:text-white",
-                    active && "bg-amber-100 text-[#1c1814] hover:bg-amber-50 hover:text-[#1c1814]",
+                    "size-10 rounded-full text-[#8E8E93] hover:bg-black/5 hover:text-[#111111]",
+                    active && "bg-[#FF6B00] text-white hover:bg-[#FF6B00] hover:text-white",
                   )}
                   aria-label={item.label}
                 >

@@ -7,6 +7,7 @@ import { Slider } from "@/components/ui/slider"
 import { BoardItemView } from "@/components/board/BoardItemView"
 import { BOARD_HEIGHT, BOARD_WIDTH } from "@/lib/constants"
 import type { BoardItem, ItemEvent } from "@/lib/types"
+import { chromePill } from "./chrome"
 
 type TimedEvent = ItemEvent & { playAt: number }
 
@@ -96,7 +97,7 @@ export function TimelapsePlayer({
   if (!open) return null
 
   return (
-    <div className="absolute inset-0 z-40 flex flex-col bg-[#1c1814]/70 backdrop-blur-[2px]">
+    <div className="absolute inset-0 z-40 flex flex-col bg-black/20 backdrop-blur-[2px]">
       <div className="relative mx-auto mt-16 mb-24 flex min-h-0 flex-1 items-center justify-center overflow-hidden px-6">
         <div
           className="origin-center"
@@ -118,18 +119,18 @@ export function TimelapsePlayer({
               />
             ))}
             {!events.length ? (
-              <p className="absolute inset-0 flex items-center justify-center text-2xl text-stone-400">
+              <p className="absolute inset-0 flex items-center justify-center text-2xl text-[#8E8E93]">
                 Nothing happened on this wall yet.
               </p>
             ) : null}
           </div>
         </div>
       </div>
-      <div className="absolute inset-x-0 bottom-6 mx-auto flex w-[min(640px,92vw)] items-center gap-3 rounded-full border border-white/10 bg-[#1c1814]/90 px-4 py-2 text-stone-100 shadow-xl">
+      <div className={`absolute inset-x-0 bottom-6 mx-auto flex w-[min(640px,92vw)] items-center gap-3 ${chromePill} px-4 py-2 text-[#111111]`}>
         <Button
           variant="ghost"
           size="icon-sm"
-          className="text-stone-100"
+          className="text-[#111111]"
           onClick={() => setPlaying((value) => !value)}
         >
           {playing ? <Pause /> : <Play />}
@@ -147,14 +148,14 @@ export function TimelapsePlayer({
               key={value}
               size="xs"
               variant={speed === value ? "secondary" : "ghost"}
-              className="text-stone-100"
+              className="text-[#111111]"
               onClick={() => setSpeed(value)}
             >
               {value}x
             </Button>
           ))}
         </div>
-        <Button size="sm" variant="secondary" onClick={onClose}>
+        <Button size="sm" onClick={onClose}>
           Close
         </Button>
       </div>

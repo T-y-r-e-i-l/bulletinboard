@@ -4,6 +4,7 @@ import { useRef, type PointerEvent } from "react"
 import { BOARD_HEIGHT, BOARD_WIDTH } from "@/lib/constants"
 import type { BoardItem, CursorPayload, Point } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { chromeCard } from "./chrome"
 
 const MAP_WIDTH = 192
 const MAP_HEIGHT = Math.round((MAP_WIDTH * BOARD_HEIGHT) / BOARD_WIDTH)
@@ -70,14 +71,13 @@ export function Minimap({
       role="img"
       aria-label="Canvas minimap"
       className={cn(
-        "pointer-events-auto relative overflow-hidden rounded-xl",
+        `pointer-events-auto relative ${chromeCard} overflow-hidden`,
         "cursor-pointer",
       )}
       style={{
         width: MAP_WIDTH,
         height: MAP_HEIGHT,
-        background: "#f3ebe0",
-        boxShadow: "0 12px 40px rgba(0,0,0,0.35), inset 0 0 0 3px #6b4a32",
+        background: "#FFFFFF",
       }}
       onPointerDown={jump}
       onPointerMove={drag}
@@ -92,14 +92,14 @@ export function Minimap({
             width: Math.max(2, item.width * scaleX),
             height: Math.max(2, item.height * scaleY),
             background:
-              typeof item.payload.color === "string" ? item.payload.color : "#c4b5a5",
+              typeof item.payload.color === "string" ? item.payload.color : "#8E8E93",
             opacity: 0.85,
           }}
         />
       ))}
 
       <div
-        className="absolute border border-amber-200/90 bg-amber-200/15"
+        className="absolute border border-[#FF6B00] bg-[#FF6B00]/15"
         style={{
           left: viewLeft,
           top: viewTop,
@@ -128,7 +128,7 @@ export function Minimap({
             left: cursor.x * scaleX - 5,
             top: cursor.y * scaleY - 5,
             background: cursorColor,
-            boxShadow: `0 0 0 2px #1c1814, 0 0 8px ${cursorColor}`,
+            boxShadow: "0 0 0 2px #FFFFFF",
           }}
         />
       ) : null}
