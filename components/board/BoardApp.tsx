@@ -13,10 +13,11 @@ import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
   DEFAULT_ZOOM,
+  VIEW_ANIMATION_MS,
   ZOOM_STEP,
 } from "@/lib/constants"
 import { boundsForStrokes, pointsToPath, strokeStyle } from "@/lib/drawing"
-import { centerPan, clampPan, defaultView, zoomAround } from "@/lib/viewport"
+import { centerPan, clampPan, defaultView, easePalmer, focusViewForItem, lerpView, zoomAround } from "@/lib/viewport"
 import { usesSupabase } from "@/lib/flags"
 import { createBrowserClient } from "@/lib/supabase/browser"
 import type {
@@ -59,6 +60,10 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
   const [timelapse, setTimelapse] = useState(false)
   const [sessionId] = useState(() => crypto.randomUUID())
   const viewportRef = useRef<HTMLDivElement>(null)
+  const viewAnimRef = useRef<number | null>(null)
+  const viewRef = useRef({ pan, zoom })
+  viewRef.current = { pan, zoom }
+  const pointerMovedRef = useRef(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const dragRef = useRef<{
     mode: "pan" | "item" | "resize" | "draw"
@@ -99,20 +104,62 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
     return { w: rect?.width ?? 1280, h: rect?.height ?? 800 }
   }, [])
 
+  const cancelViewAnim = useCallback(() => {
+    if (viewAnimRef.current != null) {
+      cancelAnimationFrame(viewAnimRef.current)
+      viewAnimRef.current = null
+    }
+  }, [])
+
+  const animateToView = useCallback(
+    (next: { pan: { x: number; y: number }; zoom: number }) => {
+      const { w, h } = viewportSize()
+      const to = {
+        zoom: next.zoom,
+        pan: clampPan(next.pan.x, next.pan.y, next.zoom, w, h),
+      }
+      const from = { ...viewRef.current }
+      cancelViewAnim()
+      const started = performance.now()
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - started) / VIEW_ANIMATION_MS)
+        const view = lerpView(from, to, easePalmer(t))
+        viewRef.current = view
+        setZoom(view.zoom)
+        setPan(view.pan)
+        if (t < 1) viewAnimRef.current = requestAnimationFrame(tick)
+        else viewAnimRef.current = null
+      }
+      viewAnimRef.current = requestAnimationFrame(tick)
+    },
+    [cancelViewAnim, viewportSize],
+  )
+
   const applyZoom = useCallback(
     (nextZoom: number, originX?: number, originY?: number) => {
       const { w, h } = viewportSize()
-      const result = zoomAround(zoom, nextZoom, pan, originX ?? w / 2, originY ?? h / 2, w, h)
-      setZoom(result.zoom)
-      setPan(result.pan)
+      const current = viewRef.current
+      const result = zoomAround(
+        current.zoom,
+        nextZoom,
+        current.pan,
+        originX ?? w / 2,
+        originY ?? h / 2,
+        w,
+        h,
+      )
+      animateToView(result)
     },
-    [pan, viewportSize, zoom],
+    [animateToView, viewportSize],
   )
 
   const recenter = useCallback(() => {
     const { w, h } = viewportSize()
-    setPan(centerPan(zoom, w, h))
-  }, [viewportSize, zoom])
+    const { zoom: currentZoom } = viewRef.current
+    animateToView({ zoom: currentZoom, pan: centerPan(currentZoom, w, h) })
+  }, [animateToView, viewportSize])
+
+  useEffect(() => () => cancelViewAnim(), [cancelViewAnim])
 
   useLayoutEffect(() => {
     const { w, h } = viewportSize()
@@ -309,12 +356,14 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
 
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
     if (timelapse) return
+    pointerMovedRef.current = false
     const point = screenToBoard(event.clientX, event.clientY)
     const target = event.target as HTMLElement
     const itemEl = target.closest<HTMLElement>("[data-item-id]")
     const resize = target.dataset.resize === "1"
 
     if (tool === "draw" && !readOnly) {
+      cancelViewAnim()
       const stroke: Stroke = {
         points: [point],
         color: drawColor,
@@ -335,6 +384,7 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
       setSelectedId(id)
       if (readOnly) return
       if (target.isContentEditable && !resize) return
+      cancelViewAnim()
       void patchItem(id, { z_index: Math.max(...itemsRef.current.map((row) => row.z_index), 0) + 1 }, false)
       dragRef.current = {
         mode: resize ? "resize" : "item",
@@ -351,12 +401,13 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
 
     if (!itemEl && (tool === "select" || event.button === 1)) {
       setSelectedId(null)
+      cancelViewAnim()
       dragRef.current = {
         mode: "pan",
         startX: event.clientX,
         startY: event.clientY,
-        origX: pan.x,
-        origY: pan.y,
+        origX: viewRef.current.pan.x,
+        origY: viewRef.current.pan.y,
         origW: 0,
         origH: 0,
       }
@@ -397,13 +448,23 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
     }
     const drag = dragRef.current
     if (!drag) return
+    if (drag.mode === "item" || drag.mode === "resize") {
+      const dx = point.x - drag.startX
+      const dy = point.y - drag.startY
+      if (Math.hypot(dx, dy) > 4) pointerMovedRef.current = true
+    }
+    if (drag.mode === "pan") {
+      const dx = event.clientX - drag.startX
+      const dy = event.clientY - drag.startY
+      if (Math.hypot(dx, dy) > 4) pointerMovedRef.current = true
+    }
     if (drag.mode === "pan") {
       const { w, h } = viewportSize()
       setPan(
         clampPan(
           drag.origX + (event.clientX - drag.startX),
           drag.origY + (event.clientY - drag.startY),
-          zoom,
+          viewRef.current.zoom,
           w,
           h,
         ),
@@ -467,21 +528,37 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
       setLiveStroke(null)
       signal({ kind: "ink", stroke: null })
     }
+    if (drag?.mode === "item" && drag.id && !pointerMovedRef.current && !readOnly) {
+      const item = itemsRef.current.find((row) => row.id === drag.id)
+      const { w, h } = viewportSize()
+      if (item) animateToView(focusViewForItem(item, viewRef.current, { w, h }))
+    }
   }
 
   function onWheel(event: WheelEvent<HTMLDivElement>) {
     event.preventDefault()
     const { w, h } = viewportSize()
+    cancelViewAnim()
+    const current = viewRef.current
     if (event.ctrlKey || event.metaKey) {
       const rect = viewportRef.current?.getBoundingClientRect()
-      applyZoom(
-        zoom * (event.deltaY > 0 ? 1 / 1.06 : 1.06),
-        event.clientX - (rect?.left ?? 0),
-        event.clientY - (rect?.top ?? 0),
+      animateToView(
+        zoomAround(
+          current.zoom,
+          current.zoom * (event.deltaY > 0 ? 1 / 1.06 : 1.06),
+          current.pan,
+          event.clientX - (rect?.left ?? 0),
+          event.clientY - (rect?.top ?? 0),
+          w,
+          h,
+        ),
       )
       return
     }
-    setPan(clampPan(pan.x - event.deltaX, pan.y - event.deltaY, zoom, w, h))
+    animateToView({
+      zoom: current.zoom,
+      pan: clampPan(current.pan.x - event.deltaX, current.pan.y - event.deltaY, current.zoom, w, h),
+    })
   }
 
   useEffect(() => {
@@ -498,11 +575,11 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
       }
       if (event.key === "=" || event.key === "+") {
         event.preventDefault()
-        applyZoom(zoom * ZOOM_STEP)
+        applyZoom(viewRef.current.zoom * ZOOM_STEP)
       }
       if (event.key === "-" || event.key === "_") {
         event.preventDefault()
-        applyZoom(zoom / ZOOM_STEP)
+        applyZoom(viewRef.current.zoom / ZOOM_STEP)
       }
       if (event.key === "0") {
         event.preventDefault()
@@ -511,7 +588,7 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [applyZoom, readOnly, recenter, selectedId, zoom])
+  }, [applyZoom, readOnly, recenter, selectedId])
 
   const presenceList = useMemo(() => {
     const map = new Map<string, PresenceUser>()
@@ -557,8 +634,8 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
       {!timelapse ? (
         <ViewControls
           zoom={zoom}
-          onZoomIn={() => applyZoom(zoom * ZOOM_STEP)}
-          onZoomOut={() => applyZoom(zoom / ZOOM_STEP)}
+          onZoomIn={() => applyZoom(viewRef.current.zoom * ZOOM_STEP)}
+          onZoomOut={() => applyZoom(viewRef.current.zoom / ZOOM_STEP)}
           onRecenter={recenter}
           pan={pan}
           viewport={viewportSize()}
@@ -568,7 +645,11 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
           items={items}
           onJump={(x, y) => {
             const { w, h } = viewportSize()
-            setPan(clampPan(w / 2 - x * zoom, h / 2 - y * zoom, zoom, w, h))
+            const { zoom: currentZoom } = viewRef.current
+            animateToView({
+              zoom: currentZoom,
+              pan: clampPan(w / 2 - x * currentZoom, h / 2 - y * currentZoom, currentZoom, w, h),
+            })
           }}
         />
       ) : null}
