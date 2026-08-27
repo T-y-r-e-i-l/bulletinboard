@@ -106,7 +106,7 @@ export function TimelapsePlayer({
             transform: `scale(${Math.min(0.08, 1100 / BOARD_WIDTH, 620 / BOARD_HEIGHT)})`,
           }}
         >
-          <div className="wall-surface h-full w-full overflow-hidden">
+          <div className="relative h-full w-full overflow-hidden bg-[#F5F5F5]">
             {framed.map((item) => (
               <BoardItemView
                 key={item.id}

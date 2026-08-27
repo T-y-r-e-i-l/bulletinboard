@@ -575,7 +575,7 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
 
       <div
         ref={viewportRef}
-        className={cn("room-bg h-full w-full cursor-grab overflow-hidden", tool === "draw" && "cursor-crosshair")}
+        className={cn("h-full w-full cursor-grab overflow-hidden bg-[#F5F5F5]", tool === "draw" && "cursor-crosshair")}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -604,50 +604,43 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
             height: BOARD_HEIGHT,
           }}
         >
-          <div className="board-frame">
-            <div className="wall-surface relative h-full w-full">
-              {!items.length ? (
-                <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-2xl text-stone-400/80">
-                  This wall is empty. Put something on it.
-                </p>
-              ) : null}
-              {items.map((item) => (
-                <BoardItemView
-                  key={item.id}
-                  item={item}
-                  selected={item.id === selectedId}
-                  readOnly={readOnly}
-                  onSelect={(event) => {
-                    event.stopPropagation()
-                    onPointerDown(event as unknown as PointerEvent<HTMLDivElement>)
-                  }}
-                  onCommitText={(content) => void patchItem(item.id, { payload: { ...item.payload, content } })}
-                />
+          <div className="relative h-full w-full bg-[#F5F5F5]">
+            {items.map((item) => (
+              <BoardItemView
+                key={item.id}
+                item={item}
+                selected={item.id === selectedId}
+                readOnly={readOnly}
+                onSelect={(event) => {
+                  event.stopPropagation()
+                  onPointerDown(event as unknown as PointerEvent<HTMLDivElement>)
+                }}
+                onCommitText={(content) => void patchItem(item.id, { payload: { ...item.payload, content } })}
+              />
+            ))}
+            <svg className="pointer-events-none absolute inset-0 h-full w-full">
+              {liveStroke ? <path d={pointsToPath(liveStroke.points)} {...strokeStyle(liveStroke)} /> : null}
+              {Object.values(remoteInk).map((stroke, index) => (
+                <path key={index} d={pointsToPath(stroke.points)} {...strokeStyle(stroke)} />
               ))}
-              <svg className="pointer-events-none absolute inset-0 h-full w-full">
-                {liveStroke ? <path d={pointsToPath(liveStroke.points)} {...strokeStyle(liveStroke)} /> : null}
-                {Object.values(remoteInk).map((stroke, index) => (
-                  <path key={index} d={pointsToPath(stroke.points)} {...strokeStyle(stroke)} />
-                ))}
-              </svg>
-              {Object.values(cursors).map((cursor) => (
-                <div
-                  key={cursor.sessionId}
-                  className="pointer-events-none absolute z-50"
-                  style={{ left: cursor.x, top: cursor.y }}
+            </svg>
+            {Object.values(cursors).map((cursor) => (
+              <div
+                key={cursor.sessionId}
+                className="pointer-events-none absolute z-50"
+                style={{ left: cursor.x, top: cursor.y }}
+              >
+                <svg width="18" height="22" viewBox="0 0 18 22" aria-hidden>
+                  <path d="M1 1 L1 18 L6 13 L11 21 L14 19 L9 12 L17 12 Z" fill={cursor.color} stroke="#1c1814" />
+                </svg>
+                <span
+                  className="ml-3 rounded-full px-2 py-0.5 text-[11px] font-medium text-white shadow"
+                  style={{ background: cursor.color }}
                 >
-                  <svg width="18" height="22" viewBox="0 0 18 22" aria-hidden>
-                    <path d="M1 1 L1 18 L6 13 L11 21 L14 19 L9 12 L17 12 Z" fill={cursor.color} stroke="#1c1814" />
-                  </svg>
-                  <span
-                    className="ml-3 rounded-full px-2 py-0.5 text-[11px] font-medium text-white shadow"
-                    style={{ background: cursor.color }}
-                  >
-                    {cursor.name}
-                  </span>
-                </div>
-              ))}
-            </div>
+                  {cursor.name}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

@@ -54,7 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} ${oswald.variable} ${marker.variable} ${comic.variable} h-full antialiased`}
     >
-      <body className="min-h-full overflow-hidden">
+      <body className="min-h-full overflow-hidden bg-background text-foreground">
         <TooltipProvider>
           {children}
           <Toaster />
