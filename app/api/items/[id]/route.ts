@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { bus } from "@/lib/bus"
 import { deleteItem, getBoard, getItem, updateItem } from "@/lib/db"
 import { clampItem, sanitizeText } from "@/lib/geometry"
-import { getClientIp, identityFromIp } from "@/lib/identity"
+import { getClientIp } from "@/lib/identity"
 import { rateLimit } from "@/lib/rate-limit"
 
 type Params = { params: Promise<{ id: string }> }
@@ -45,7 +45,7 @@ export async function PATCH(request: Request, { params }: Params) {
     Object.assign(patch, box)
   }
 
-  const saved = await updateItem(id, patch, identityFromIp(ip).name, recordEvent)
+  const saved = await updateItem(id, patch)
   if (saved) bus.emit("item", { kind: "update", item: saved, boardId: saved.board_id })
   return NextResponse.json({ item: saved })
 }
@@ -62,7 +62,7 @@ export async function DELETE(request: Request, { params }: Params) {
   if (board?.archived_at) {
     return NextResponse.json({ error: "This day is archived." }, { status: 403 })
   }
-  const removed = await deleteItem(id, identityFromIp(ip).name)
+  const removed = await deleteItem(id)
   if (removed) bus.emit("item", { kind: "delete", item: removed, boardId: removed.board_id })
   return NextResponse.json({ ok: true })
 }

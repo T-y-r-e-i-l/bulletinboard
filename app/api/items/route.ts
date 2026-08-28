@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { MAX_ITEMS_PER_BOARD } from "@/lib/constants"
-import { getClientIp, identityFromIp } from "@/lib/identity"
+import { getClientIp } from "@/lib/identity"
 import { rateLimit } from "@/lib/rate-limit"
 import { clampItem, defaultSize, isItemType, sanitizeText } from "@/lib/geometry"
 import { bus } from "@/lib/bus"
@@ -43,7 +43,6 @@ export async function POST(request: Request) {
   if (!rateLimit(ip)) {
     return NextResponse.json({ error: "Slow down a little." }, { status: 429 })
   }
-  const identity = identityFromIp(ip)
   const body = (await request.json()) as Record<string, unknown>
   const boardId = typeof body.boardId === "string" ? body.boardId : ""
   const type = body.type
@@ -92,7 +91,7 @@ export async function POST(request: Request) {
     z_index: (await maxZ(boardId)) + 1,
     payload,
   }
-  const saved = await insertItem(item, identity.name)
+  const saved = await insertItem(item)
   bus.emit("item", { kind: "insert", item: saved, boardId })
   return NextResponse.json({ item: saved })
 }

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from "react"
 import { Inspector } from "@/components/board/Inspector"
 import { BoardItemView } from "@/components/board/BoardItemView"
-import { TimelapsePlayer } from "@/components/board/TimelapsePlayer"
 import { Toolbar } from "@/components/board/Toolbar"
 import { TopBar } from "@/components/board/TopBar"
 import { ViewControls } from "@/components/board/ViewControls"
@@ -57,7 +56,6 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
   const [localCursor, setLocalCursor] = useState<Point | null>(null)
   const [urlOpen, setUrlOpen] = useState(false)
   const [urlValue, setUrlValue] = useState("")
-  const [timelapse, setTimelapse] = useState(false)
   const [sessionId] = useState(() => crypto.randomUUID())
   const viewportRef = useRef<HTMLDivElement>(null)
   const viewAnimRef = useRef<number | null>(null)
@@ -357,7 +355,6 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
   }
 
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
-    if (timelapse) return
     pointerMovedRef.current = false
     clickFocusIdRef.current = null
     clickFocusOriginRef.current = null
@@ -626,9 +623,8 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
         neighbors={neighbors}
         users={presenceList}
         identity={identity}
-        onTimelapse={() => setTimelapse(true)}
       />
-      {!readOnly && !timelapse ? (
+      {!readOnly ? (
         <>
           <Toolbar tool={tool} onTool={setTool} />
           <Inspector
@@ -652,28 +648,26 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
           />
         </>
       ) : null}
-      {!timelapse ? (
-        <ViewControls
-          zoom={zoom}
-          onZoomIn={() => applyZoom(viewRef.current.zoom * ZOOM_STEP)}
-          onZoomOut={() => applyZoom(viewRef.current.zoom / ZOOM_STEP)}
-          onRecenter={recenter}
-          pan={pan}
-          viewport={viewportSize()}
-          cursor={localCursor}
-          cursorColor={identity.color}
-          remoteCursors={Object.values(cursors)}
-          items={items}
-          onJump={(x, y) => {
-            const { w, h } = viewportSize()
-            const { zoom: currentZoom } = viewRef.current
-            animateToView({
-              zoom: currentZoom,
-              pan: clampPan(w / 2 - x * currentZoom, h / 2 - y * currentZoom, currentZoom, w, h),
-            })
-          }}
-        />
-      ) : null}
+      <ViewControls
+        zoom={zoom}
+        onZoomIn={() => applyZoom(viewRef.current.zoom * ZOOM_STEP)}
+        onZoomOut={() => applyZoom(viewRef.current.zoom / ZOOM_STEP)}
+        onRecenter={recenter}
+        pan={pan}
+        viewport={viewportSize()}
+        cursor={localCursor}
+        cursorColor={identity.color}
+        remoteCursors={Object.values(cursors)}
+        items={items}
+        onJump={(x, y) => {
+          const { w, h } = viewportSize()
+          const { zoom: currentZoom } = viewRef.current
+          animateToView({
+            zoom: currentZoom,
+            pan: clampPan(w / 2 - x * currentZoom, h / 2 - y * currentZoom, currentZoom, w, h),
+          })
+        }}
+      />
 
       <div
         ref={viewportRef}
@@ -782,8 +776,6 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
           </Button>
         </DialogContent>
       </Dialog>
-
-      <TimelapsePlayer boardId={board.id} open={timelapse} onClose={() => setTimelapse(false)} />
     </div>
   )
 }

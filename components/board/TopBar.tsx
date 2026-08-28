@@ -14,14 +14,12 @@ export function TopBar({
   neighbors,
   users,
   identity,
-  onTimelapse,
 }: {
   boardDate: string
   readOnly: boolean
   neighbors: NeighborDates
   users: PresenceUser[]
   identity: Identity
-  onTimelapse: () => void
 }) {
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex flex-wrap items-start justify-between gap-2 p-3 sm:gap-4 sm:p-4">
@@ -48,13 +46,6 @@ export function TopBar({
         ) : (
           <span className="size-7 shrink-0" />
         )}
-        <Button
-          size="sm"
-          className="ml-0.5 shrink-0 rounded-full bg-[#FF6B00] text-white hover:bg-[#FF6B00]/90 sm:ml-1"
-          onClick={onTimelapse}
-        >
-          Timelapse
-        </Button>
       </div>
       <div className="pointer-events-auto flex shrink-0 items-center gap-3">
         <p className="hidden max-w-xs text-right text-xs text-[#8E8E93] sm:block">

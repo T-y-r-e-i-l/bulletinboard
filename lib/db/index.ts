@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 import { MEDIA_BUCKET } from "@/lib/constants"
 import { usesSupabaseAdmin } from "@/lib/flags"
 import { createAdminClient, createAnonServerClient } from "@/lib/supabase/server"
-import type { Board, BoardItem, ItemEvent, NeighborDates } from "@/lib/types"
+import type { Board, BoardItem, NeighborDates } from "@/lib/types"
 import {
   localDeleteItem,
   localEnsureBoard,
@@ -10,7 +10,6 @@ import {
   localGetBoardByDate,
   localGetItem,
   localInsertItem,
-  localListEvents,
   localListItems,
   localMaxZ,
   localNeighborDates,
@@ -136,78 +135,38 @@ export async function maxZ(boardId: string) {
   return localMaxZ(boardId)
 }
 
-async function recordSupabaseEvent(
-  item: BoardItem,
-  action: ItemEvent["action"],
-  actorName: string,
-  snapshot: BoardItem | null,
-) {
-  const admin = createAdminClient()!
-  await admin.from("item_events").insert({
-    board_id: item.board_id,
-    item_id: item.id,
-    action,
-    actor_name: actorName,
-    snapshot,
-  })
-}
-
-export async function insertItem(item: Omit<BoardItem, "created_at" | "updated_at">, actorName: string) {
+export async function insertItem(item: Omit<BoardItem, "created_at" | "updated_at">) {
   const now = new Date().toISOString()
   const full: BoardItem = { ...item, created_at: now, updated_at: now }
   if (usesSupabaseAdmin()) {
     const admin = createAdminClient()!
     const { data, error } = await admin.from("items").insert(item).select("*").single()
     if (error) throw error
-    const saved = data as BoardItem
-    await recordSupabaseEvent(saved, "insert", actorName, saved)
-    return saved
+    return data as BoardItem
   }
-  return localInsertItem(full, actorName)
+  return localInsertItem(full)
 }
 
-export async function updateItem(
-  id: string,
-  patch: Partial<BoardItem>,
-  actorName: string,
-  recordEvent: boolean,
-) {
+export async function updateItem(id: string, patch: Partial<BoardItem>) {
   if (usesSupabaseAdmin()) {
     const admin = createAdminClient()!
     const { data, error } = await admin.from("items").update(patch).eq("id", id).select("*").single()
     if (error) throw error
-    const saved = data as BoardItem
-    if (recordEvent) await recordSupabaseEvent(saved, "update", actorName, saved)
-    return saved
+    return data as BoardItem
   }
-  return localUpdateItem(id, patch, actorName, recordEvent)
+  return localUpdateItem(id, patch)
 }
 
-export async function deleteItem(id: string, actorName: string) {
+export async function deleteItem(id: string) {
   const existing = await getItem(id)
   if (!existing) return null
   if (usesSupabaseAdmin()) {
     const admin = createAdminClient()!
     const { error } = await admin.from("items").delete().eq("id", id)
     if (error) throw error
-    await recordSupabaseEvent(existing, "delete", actorName, null)
     return existing
   }
-  return localDeleteItem(id, actorName)
-}
-
-export async function listEvents(boardId: string) {
-  if (usesSupabaseAdmin()) {
-    const client = createAnonServerClient() ?? createAdminClient()
-    const { data, error } = await client!
-      .from("item_events")
-      .select("*")
-      .eq("board_id", boardId)
-      .order("created_at", { ascending: true })
-    if (error) throw error
-    return (data ?? []) as ItemEvent[]
-  }
-  return localListEvents(boardId)
+  return localDeleteItem(id)
 }
 
 export async function newItemId() {

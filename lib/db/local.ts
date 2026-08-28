@@ -110,30 +110,16 @@ export async function localGetItem(id: string) {
   return store.items.find((item) => item.id === id) ?? null
 }
 
-export async function localInsertItem(item: BoardItem, actorName: string) {
+export async function localInsertItem(item: BoardItem) {
   return withLock(async () => {
     const store = await readStore()
     store.items.push(item)
-    store.events.push({
-      id: randomUUID(),
-      board_id: item.board_id,
-      item_id: item.id,
-      action: "insert",
-      actor_name: actorName,
-      snapshot: item,
-      created_at: new Date().toISOString(),
-    })
     await writeStore(store)
     return item
   })
 }
 
-export async function localUpdateItem(
-  id: string,
-  patch: Partial<BoardItem>,
-  actorName: string,
-  recordEvent: boolean,
-) {
+export async function localUpdateItem(id: string, patch: Partial<BoardItem>) {
   return withLock(async () => {
     const store = await readStore()
     const index = store.items.findIndex((item) => item.id === id)
@@ -144,47 +130,20 @@ export async function localUpdateItem(
       updated_at: new Date().toISOString(),
     }
     store.items[index] = next
-    if (recordEvent) {
-      store.events.push({
-        id: randomUUID(),
-        board_id: next.board_id,
-        item_id: next.id,
-        action: "update",
-        actor_name: actorName,
-        snapshot: next,
-        created_at: new Date().toISOString(),
-      })
-    }
     await writeStore(store)
     return next
   })
 }
 
-export async function localDeleteItem(id: string, actorName: string) {
+export async function localDeleteItem(id: string) {
   return withLock(async () => {
     const store = await readStore()
     const index = store.items.findIndex((item) => item.id === id)
     if (index < 0) return null
     const [removed] = store.items.splice(index, 1)
-    store.events.push({
-      id: randomUUID(),
-      board_id: removed!.board_id,
-      item_id: removed!.id,
-      action: "delete",
-      actor_name: actorName,
-      snapshot: null,
-      created_at: new Date().toISOString(),
-    })
     await writeStore(store)
     return removed!
   })
-}
-
-export async function localListEvents(boardId: string) {
-  const store = await readStore()
-  return store.events
-    .filter((event) => event.board_id === boardId)
-    .sort((a, b) => a.created_at.localeCompare(b.created_at))
 }
 
 export async function localMaxZ(boardId: string) {
