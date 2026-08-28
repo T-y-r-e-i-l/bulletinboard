@@ -102,6 +102,18 @@ export function easePalmer(t: number) {
   return 1 - (1 - x) ** 4
 }
 
+export function shouldAnimateItemFocus({
+  readOnly,
+  pointerMoved,
+  editingText,
+}: {
+  readOnly: boolean
+  pointerMoved: boolean
+  editingText: boolean
+}) {
+  return !readOnly && !pointerMoved && !editingText
+}
+
 export function lerpView(from: ViewState, to: ViewState, t: number): ViewState {
   const k = clamp(t, 0, 1)
   return {

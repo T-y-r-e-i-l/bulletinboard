@@ -4,6 +4,7 @@ import {
   Geist,
   Geist_Mono,
   Newsreader,
+  Nunito,
   Oswald,
   Permanent_Marker,
 } from "next/font/google"
@@ -43,6 +44,12 @@ const comic = Comic_Neue({
   subsets: ["latin"],
 })
 
+const nunito = Nunito({
+  variable: "--font-island",
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
+})
+
 export const metadata: Metadata = {
   title: "Publicpaste — today’s wall",
   description: "A public daily bulletin board. Anyone can pin something. It clears at midnight Pacific.",
@@ -52,7 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} ${oswald.variable} ${marker.variable} ${comic.variable} h-full antialiased`}
+      className={`${nunito.variable} ${geistSans.variable} ${geistMono.variable} ${newsreader.variable} ${oswald.variable} ${marker.variable} ${comic.variable} h-full antialiased`}
     >
       <body className="min-h-full overflow-hidden bg-background text-foreground">
         <TooltipProvider>

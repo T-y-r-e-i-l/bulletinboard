@@ -7,7 +7,8 @@ import { headers } from "next/headers"
 export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
-  const board = await ensureBoard(todayInBoardTz())
+  const today = todayInBoardTz()
+  const board = await ensureBoard(today)
   const [items, neighbors, headerList] = await Promise.all([
     listItems(board.id),
     neighborDates(board.board_date),
@@ -22,6 +23,7 @@ export default async function HomePage() {
       identity={identity}
       neighbors={neighbors}
       readOnly={false}
+      today={today}
     />
   )
 }

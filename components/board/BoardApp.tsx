@@ -9,6 +9,7 @@ import { ViewControls } from "@/components/board/ViewControls"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import {
+  ALLOWED_AUDIO_TYPES,
   BOARD_HEIGHT,
   BOARD_WIDTH,
   DEFAULT_ZOOM,
@@ -16,7 +17,8 @@ import {
   ZOOM_STEP,
 } from "@/lib/constants"
 import { boundsForStrokes, pointsToPath, strokeStyle } from "@/lib/drawing"
-import { centerPan, clampPan, defaultView, easePalmer, focusViewForItem, lerpView, zoomAround } from "@/lib/viewport"
+import { mediaAccept, mediaKindFromFile } from "@/lib/media-kind"
+import { centerPan, clampPan, defaultView, easePalmer, focusViewForItem, lerpView, shouldAnimateItemFocus, zoomAround } from "@/lib/viewport"
 import { usesSupabase } from "@/lib/flags"
 import { createBrowserClient } from "@/lib/supabase/browser"
 import type {
@@ -38,9 +40,10 @@ type Props = {
   identity: Identity
   neighbors: NeighborDates
   readOnly: boolean
+  today: string
 }
 
-export function BoardApp({ board, initialItems, identity, neighbors, readOnly }: Props) {
+export function BoardApp({ board, initialItems, identity, neighbors, readOnly, today }: Props) {
   const [items, setItems] = useState<BoardItem[]>(initialItems)
   const [tool, setTool] = useState<Tool>("select")
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -426,9 +429,12 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
       setUrlOpen(true)
       pendingPoint.current = point
     }
-    if (tool === "image" || tool === "video" || tool === "audio") {
+    if (tool === "image" || tool === "audio") {
       pendingPoint.current = point
-      pendingKind.current = tool
+      pendingKind.current = tool === "audio" ? "audio" : "image"
+      if (fileRef.current) {
+        fileRef.current.accept = tool === "audio" ? ALLOWED_AUDIO_TYPES.join(",") : mediaAccept
+      }
       fileRef.current?.click()
     }
   }
@@ -518,10 +524,14 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
       clickFocusOrigin != null &&
       Math.hypot(event.clientX - clickFocusOrigin.x, event.clientY - clickFocusOrigin.y) > 4
     const focusId =
-      !pointerMovedRef.current && !clickFocusMoved && !readOnly
-        ? drag?.mode === "item" && drag.id
-          ? drag.id
-          : clickFocusId
+      shouldAnimateItemFocus({
+        readOnly,
+        pointerMoved: pointerMovedRef.current || clickFocusMoved,
+        editingText: clickFocusId != null,
+      }) &&
+      drag?.mode === "item" &&
+      drag.id
+        ? drag.id
         : null
     if (focusId) {
       const item = itemsRef.current.find((row) => row.id === focusId)
@@ -616,9 +626,10 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
   }, [selfUser, users, sessionId])
 
   return (
-    <div className="relative h-dvh w-full overflow-hidden">
+    <div className="island-sky relative h-dvh w-full overflow-hidden">
       <TopBar
         boardDate={board.board_date}
+        today={today}
         readOnly={readOnly}
         neighbors={neighbors}
         users={presenceList}
@@ -671,7 +682,7 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
 
       <div
         ref={viewportRef}
-        className={cn("h-full w-full cursor-grab overflow-hidden bg-[#F5F5F5]", tool === "draw" && "cursor-crosshair")}
+        className={cn("island-sky h-full w-full cursor-grab overflow-hidden", tool === "draw" && "cursor-crosshair")}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -684,12 +695,12 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
           const file = event.dataTransfer.files[0]
           if (!file) return
           const point = screenToBoard(event.clientX, event.clientY)
-          const kind = file.type.startsWith("video")
-            ? "video"
-            : file.type.startsWith("audio")
-              ? "audio"
-              : "image"
-          void uploadAt(file, kind, point)
+          if (file.type.startsWith("audio")) {
+            void uploadAt(file, "audio", point)
+            return
+          }
+          const visual = mediaKindFromFile(file)
+          if (visual) void uploadAt(file, visual, point)
         }}
       >
         <div
@@ -700,7 +711,7 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
             height: BOARD_HEIGHT,
           }}
         >
-          <div className="relative h-full w-full bg-[#F5F5F5]">
+          <div className="island-grass relative h-full w-full">
             {items.map((item) => (
               <BoardItemView
                 key={item.id}
@@ -729,7 +740,7 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
                 <svg width="18" height="22" viewBox="0 0 18 22" aria-hidden>
                   <path d="M1 1 L1 18 L6 13 L11 21 L14 19 L9 12 L17 12 Z" fill={cursor.color} stroke="#FFFFFF" />
                 </svg>
-                <span className="ml-3 rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-[#111111] shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
+                <span className="ml-3 rounded-full bg-[#E59266] px-2 py-0.5 text-[11px] font-extrabold text-[#FFFBE7] shadow-[0_6px_0_rgba(90,70,40,0.14)]">
                   {cursor.name}
                 </span>
               </div>
@@ -745,22 +756,33 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
         onChange={(event) => {
           const file = event.target.files?.[0]
           event.target.value = ""
-          if (file) void uploadAt(file, pendingKind.current, pendingPoint.current)
+          if (!file) return
+          if (pendingKind.current === "audio") {
+            void uploadAt(file, "audio", pendingPoint.current)
+            return
+          }
+          const kind = mediaKindFromFile(file)
+          if (!kind) return
+          void uploadAt(file, kind, pendingPoint.current)
         }}
       />
 
       <Dialog open={urlOpen} onOpenChange={setUrlOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-[40px] border-0 bg-[#FFFBE7] p-6 pt-8 ring-0 shadow-[0_12px_0_rgba(90,70,40,0.14)] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Pin a link</DialogTitle>
+            <DialogTitle className="font-extrabold text-[#8A7B66]">Pin a link</DialogTitle>
           </DialogHeader>
+          <span className="absolute top-3 left-6 inline-flex items-center rounded-full bg-[#E59266] px-2.5 py-0.5 text-[11px] font-extrabold tracking-wide text-[#FFFBE7]">
+            Link
+          </span>
           <input
             value={urlValue}
             onChange={(event) => setUrlValue(event.target.value)}
             placeholder="https://"
-            className="w-full rounded-[20px] border border-black/10 bg-white px-3 py-2 text-[#111111]"
+            className="w-full rounded-full border border-[#E8D9A0] bg-[#F7F8E6] px-4 py-2 font-semibold text-[#8A7B66]"
           />
           <Button
+            className="h-11 rounded-full px-5 font-extrabold"
             onClick={() => {
               setUrlOpen(false)
               void createItem({
@@ -772,6 +794,8 @@ export function BoardApp({ board, initialItems, identity, neighbors, readOnly }:
               setUrlValue("")
             }}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/acnh/button-a.svg" alt="" className="size-6" />
             Add to wall
           </Button>
         </DialogContent>

@@ -16,7 +16,6 @@ export type Tool =
   | "sticky"
   | "url"
   | "image"
-  | "video"
   | "audio"
 
 export type Point = { x: number; y: number }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { MAX_ZOOM } from "@/lib/constants"
-import { easePalmer, focusViewForItem, lerpView, type ViewState } from "@/lib/viewport"
+import { easePalmer, focusViewForItem, lerpView, shouldAnimateItemFocus, type ViewState } from "@/lib/viewport"
 
 const viewport = { w: 1000, h: 800 }
 
@@ -62,5 +62,19 @@ describe("focusViewForItem", () => {
     const item = { x: 100, y: 100, width: 4000, height: 3000 }
     const next = focusViewForItem(item, current, viewport)
     expect(next.zoom).toBe(0.72)
+  })
+})
+
+describe("shouldAnimateItemFocus", () => {
+  it("animates a plain item click", () => {
+    expect(shouldAnimateItemFocus({ readOnly: false, pointerMoved: false, editingText: false })).toBe(true)
+  })
+
+  it("does not steal the caret when clicking text or a sticky to type", () => {
+    expect(shouldAnimateItemFocus({ readOnly: false, pointerMoved: false, editingText: true })).toBe(false)
+  })
+
+  it("does not animate after a drag", () => {
+    expect(shouldAnimateItemFocus({ readOnly: false, pointerMoved: true, editingText: false })).toBe(false)
   })
 })

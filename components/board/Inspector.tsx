@@ -7,7 +7,7 @@ import { Slider } from "@/components/ui/slider"
 import { BRUSHES, FONT_OPTIONS, FONT_WEIGHTS, STICKY_COLORS } from "@/lib/constants"
 import type { BoardItem, Tool } from "@/lib/types"
 import { cn } from "@/lib/utils"
-import { chromeCard } from "./chrome"
+import { chromeCard, chromeNameTag } from "./chrome"
 
 export function Inspector({
   tool,
@@ -34,22 +34,21 @@ export function Inspector({
 }) {
   if (tool === "draw" && !selected) {
     return (
-      <Panel>
-        <p className="text-[11px] tracking-wide text-[#8E8E93] uppercase">Brush</p>
+      <Panel tag="Brush">
         <div className="mt-2 flex gap-1">
           {BRUSHES.map((brush) => (
             <Button
               key={brush.id}
               size="sm"
               variant={drawBrush === brush.id ? "default" : "secondary"}
-              className="flex-1"
+              className="flex-1 rounded-full"
               onClick={() => onDrawBrush(brush.id)}
             >
               {brush.label}
             </Button>
           ))}
         </div>
-        <label className="mt-3 block text-[11px] tracking-wide text-[#8E8E93] uppercase">Size</label>
+        <label className="mt-3 block text-[11px] font-extrabold tracking-wide text-[#A89478]">Size</label>
         <Slider
           className="mt-2"
           min={2}
@@ -57,12 +56,12 @@ export function Inspector({
           value={[drawSize]}
           onValueChange={(value) => onDrawSize(value[0] ?? 4)}
         />
-        <label className="mt-3 block text-[11px] tracking-wide text-[#8E8E93] uppercase">Color</label>
+        <label className="mt-3 block text-[11px] font-extrabold tracking-wide text-[#A89478]">Color</label>
         <input
           type="color"
           value={drawColor}
           onChange={(event) => onDrawColor(event.target.value)}
-          className="mt-2 h-8 w-full cursor-pointer rounded border border-black/10 bg-transparent"
+          className="mt-2 h-8 w-full cursor-pointer rounded-full border border-[#E8D9A0] bg-transparent"
         />
       </Panel>
     )
@@ -71,12 +70,11 @@ export function Inspector({
   if (!selected) return null
 
   return (
-    <Panel>
+    <Panel tag={selected.type === "sticky" ? "Sticky" : selected.type === "text" ? "Text" : "Item"}>
       {selected.type === "text" ? (
         <>
-          <p className="text-[11px] tracking-wide text-[#8E8E93] uppercase">Text</p>
           <select
-            className="mt-2 w-full rounded-md border border-black/10 bg-[#F5F5F5] px-2 py-1.5 text-sm text-[#111111]"
+            className="mt-2 w-full rounded-full border border-[#E8D9A0] bg-[#F7F8E6] px-3 py-1.5 text-sm font-semibold text-[#8A7B66]"
             value={String(selected.payload.fontFamily || "sans")}
             onChange={(event) => onChangePayload({ fontFamily: event.target.value })}
           >
@@ -87,7 +85,7 @@ export function Inspector({
             ))}
           </select>
           <select
-            className="mt-2 w-full rounded-md border border-black/10 bg-[#F5F5F5] px-2 py-1.5 text-sm text-[#111111]"
+            className="mt-2 w-full rounded-full border border-[#E8D9A0] bg-[#F7F8E6] px-3 py-1.5 text-sm font-semibold text-[#8A7B66]"
             value={String(selected.payload.fontWeight || "400")}
             onChange={(event) => onChangePayload({ fontWeight: event.target.value })}
           >
@@ -97,7 +95,7 @@ export function Inspector({
               </option>
             ))}
           </select>
-          <label className="mt-3 block text-[11px] tracking-wide text-[#8E8E93] uppercase">Size</label>
+          <label className="mt-3 block text-[11px] font-extrabold tracking-wide text-[#A89478]">Size</label>
           <Slider
             className="mt-2"
             min={14}
@@ -105,38 +103,35 @@ export function Inspector({
             value={[Number(selected.payload.fontSize || 28)]}
             onValueChange={(value) => onChangePayload({ fontSize: value[0] ?? 28 })}
           />
-          <label className="mt-3 block text-[11px] tracking-wide text-[#8E8E93] uppercase">Color</label>
+          <label className="mt-3 block text-[11px] font-extrabold tracking-wide text-[#A89478]">Color</label>
           <input
             type="color"
             value={String(selected.payload.color || "#1c1917")}
             onChange={(event) => onChangePayload({ color: event.target.value })}
-            className="mt-2 h-8 w-full cursor-pointer rounded border border-black/10 bg-transparent"
+            className="mt-2 h-8 w-full cursor-pointer rounded-full border border-[#E8D9A0] bg-transparent"
           />
         </>
       ) : null}
 
       {selected.type === "sticky" ? (
-        <>
-          <p className="text-[11px] tracking-wide text-[#8E8E93] uppercase">Sticky color</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {STICKY_COLORS.map((color) => (
-              <button
-                key={color}
-                type="button"
-                aria-label={`Sticky ${color}`}
-                onClick={() => onChangePayload({ color })}
-                className={cn(
-                  "size-7 rounded-md border border-black/10 shadow-sm",
-                  selected.payload.color === color && "ring-2 ring-[#FF6B00]",
-                )}
-                style={{ background: color }}
-              />
-            ))}
-          </div>
-        </>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {STICKY_COLORS.map((color) => (
+            <button
+              key={color}
+              type="button"
+              aria-label={`Sticky ${color}`}
+              onClick={() => onChangePayload({ color })}
+              className={cn(
+                "size-7 rounded-full border border-[#E8D9A0] shadow-sm",
+                selected.payload.color === color && "ring-[3px] ring-[#F7CD67]",
+              )}
+              style={{ background: color }}
+            />
+          ))}
+        </div>
       ) : null}
 
-      <Button variant="ghost" size="sm" className="mt-4 w-full text-[#8E8E93] hover:bg-black/5 hover:text-[#111111]" onClick={onDelete}>
+      <Button variant="ghost" size="sm" className="mt-4 w-full rounded-full text-[#A89478] hover:bg-[#E8D9A0]/40 hover:text-[#8A7B66]" onClick={onDelete}>
         <Trash2 />
         Remove
       </Button>
@@ -144,9 +139,10 @@ export function Inspector({
   )
 }
 
-function Panel({ children }: { children: ReactNode }) {
+function Panel({ children, tag }: { children: ReactNode; tag: string }) {
   return (
-    <aside className={`pointer-events-auto absolute top-24 right-4 z-30 w-56 ${chromeCard} p-3 text-[#111111]`}>
+    <aside className={`pointer-events-auto absolute top-24 right-4 z-30 w-56 ${chromeCard} p-4 pt-5 text-[#8A7B66]`}>
+      <span className={`absolute -top-2.5 left-4 ${chromeNameTag}`}>{tag}</span>
       {children}
     </aside>
   )

@@ -35,6 +35,7 @@ export default async function ArchivePage({
       identity={identity}
       neighbors={neighbors}
       readOnly
+      today={today}
     />
   )
 }

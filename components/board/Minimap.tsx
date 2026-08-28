@@ -4,7 +4,6 @@ import { useRef, type PointerEvent } from "react"
 import { BOARD_HEIGHT, BOARD_WIDTH } from "@/lib/constants"
 import type { BoardItem, CursorPayload, Point } from "@/lib/types"
 import { cn } from "@/lib/utils"
-import { chromeCard } from "./chrome"
 
 const MAP_WIDTH = 192
 const MAP_HEIGHT = Math.round((MAP_WIDTH * BOARD_HEIGHT) / BOARD_WIDTH)
@@ -71,13 +70,12 @@ export function Minimap({
       role="img"
       aria-label="Canvas minimap"
       className={cn(
-        `pointer-events-auto relative ${chromeCard} overflow-hidden`,
+        `pointer-events-auto relative island-grass overflow-hidden rounded-[32px] shadow-[0_0_0_8px_#FFFBE7,0_10px_0_rgba(90,70,40,0.14)]`,
         "cursor-pointer",
       )}
       style={{
         width: MAP_WIDTH,
         height: MAP_HEIGHT,
-        background: "#FFFFFF",
       }}
       onPointerDown={jump}
       onPointerMove={drag}
@@ -85,21 +83,21 @@ export function Minimap({
       {items.map((item) => (
         <span
           key={item.id}
-          className="absolute rounded-[1px]"
+          className="absolute rounded-full"
           style={{
             left: item.x * scaleX,
             top: item.y * scaleY,
             width: Math.max(2, item.width * scaleX),
             height: Math.max(2, item.height * scaleY),
             background:
-              typeof item.payload.color === "string" ? item.payload.color : "#8E8E93",
-            opacity: 0.85,
+              typeof item.payload.color === "string" ? item.payload.color : "#F7CD67",
+            opacity: 0.9,
           }}
         />
       ))}
 
       <div
-        className="absolute border border-[#FF6B00] bg-[#FF6B00]/15"
+        className="absolute rounded-md border-2 border-[#F7CD67] bg-[#F7CD67]/25"
         style={{
           left: viewLeft,
           top: viewTop,
@@ -116,7 +114,7 @@ export function Minimap({
             left: remote.x * scaleX - 3,
             top: remote.y * scaleY - 3,
             background: remote.color,
-            boxShadow: "0 0 0 1px #FFFFFF, 0 0 0 2px rgba(0,0,0,0.1)",
+            boxShadow: "0 0 0 1px #FFFBE7, 0 0 0 2px rgba(90,70,40,0.15)",
           }}
         />
       ))}
@@ -128,7 +126,7 @@ export function Minimap({
             left: cursor.x * scaleX - 5,
             top: cursor.y * scaleY - 5,
             background: cursorColor,
-            boxShadow: "0 0 0 2px #FFFFFF",
+            boxShadow: "0 0 0 2px #FFFBE7",
           }}
         />
       ) : null}

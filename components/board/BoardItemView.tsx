@@ -5,22 +5,23 @@ import { FONT_OPTIONS } from "@/lib/constants"
 import { pointsToPath, strokeStyle } from "@/lib/drawing"
 import type { BoardItem, Stroke } from "@/lib/types"
 import { cn } from "@/lib/utils"
-import { chromeShadow } from "./chrome"
+import { chromeShadow, chromeNameTag, selectedRing } from "./chrome"
 
 const cardShadow = chromeShadow
-const selectedRing = "ring-2 ring-[#FF6B00] ring-offset-4 ring-offset-[#F5F5F5]"
 
 function Editable({
   value,
   className,
   style,
   readOnly,
+  autoFocus,
   onCommit,
 }: {
   value: string
   className?: string
   style?: CSSProperties
   readOnly: boolean
+  autoFocus?: boolean
   onCommit: (value: string) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -31,6 +32,18 @@ function Editable({
       ref.current.innerText = value
     }
   }, [value])
+
+  useEffect(() => {
+    if (!autoFocus || readOnly || !ref.current) return
+    const el = ref.current
+    el.focus()
+    const selection = window.getSelection()
+    if (!selection) return
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }, [autoFocus, readOnly])
 
   return (
     <div
@@ -85,14 +98,15 @@ export function BoardItemView({
       onPointerDown={onSelect}
     >
       {item.type === "text" ? (
-        <div className={cn("h-full w-full rounded-[20px] bg-white p-3", cardShadow, selected && selectedRing)}>
+        <div className={cn("h-full w-full rounded-[32px] bg-[#FFFBE7] p-4", cardShadow, selected && selectedRing)}>
           <Editable
             value={String(payload.content || "")}
             readOnly={readOnly}
+            autoFocus={selected}
             onCommit={onCommitText}
-            className="h-full w-full outline-none"
+            className="h-full w-full cursor-text outline-none"
             style={{
-              color: String(payload.color || "#1c1917"),
+              color: String(payload.color || "#8A7B66"),
               fontFamily: font?.css,
               fontSize: Number(payload.fontSize || 28),
               fontWeight: String(payload.fontWeight || "400"),
@@ -104,14 +118,15 @@ export function BoardItemView({
 
       {item.type === "sticky" ? (
         <div
-          className={cn("h-full w-full rounded-[20px] p-3", cardShadow, selected && selectedRing)}
+          className={cn("h-full w-full rounded-[28px] p-3", cardShadow, selected && selectedRing)}
           style={{ background: String(payload.color || "#fde68a") }}
         >
           <Editable
             value={String(payload.content || "")}
             readOnly={readOnly}
+            autoFocus={selected}
             onCommit={onCommitText}
-            className="h-full w-full text-[15px] leading-snug text-stone-800 outline-none"
+            className="h-full w-full cursor-text text-[15px] leading-snug text-[#5C4A38] outline-none"
             style={{ fontFamily: "var(--font-wall-hand), cursive" }}
           />
         </div>
@@ -123,38 +138,39 @@ export function BoardItemView({
           target="_blank"
           rel="noreferrer"
           className={cn(
-            "flex h-full w-full flex-col overflow-hidden rounded-[20px] bg-white",
+            "relative flex h-full w-full flex-col overflow-hidden rounded-[28px] bg-[#FFFBE7]",
             cardShadow,
             selected && selectedRing,
           )}
           onPointerDown={(event) => event.preventDefault()}
         >
+          <span className={`absolute top-2 left-3 z-10 ${chromeNameTag}`}>Link</span>
           {payload.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={String(payload.image)} alt="" className="h-28 w-full rounded-t-[20px] object-cover" />
+            <img src={String(payload.image)} alt="" className="h-28 w-full rounded-t-[28px] object-cover" />
           ) : (
-            <div className="flex h-28 items-center justify-center bg-stone-100 text-stone-400">Link</div>
+            <div className="flex h-28 items-center justify-center bg-[#F7F8E6] text-[#A89478]">Link</div>
           )}
           <div className="p-3">
-            <p className="line-clamp-2 text-sm font-semibold text-stone-900">{String(payload.title || "Link")}</p>
-            <p className="mt-1 truncate text-xs text-stone-500">{String(payload.href || "")}</p>
+            <p className="line-clamp-2 text-sm font-extrabold text-[#8A7B66]">{String(payload.title || "Link")}</p>
+            <p className="mt-1 truncate text-xs font-semibold text-[#A89478]">{String(payload.href || "")}</p>
           </div>
         </a>
       ) : null}
 
       {item.type === "image" ? (
         <div
-          className={cn(
-            "h-full w-full overflow-hidden rounded-[20px] bg-white p-0.5",
-            cardShadow,
-            selected && selectedRing,
-          )}
+          className={cn("h-full w-full overflow-hidden rounded-[22px] p-2", selected && selectedRing)}
+          style={{
+            background: "linear-gradient(180deg, #d4b07a 0%, #b8894a 100%)",
+            boxShadow: "0 8px 0 rgba(90,60,20,0.2), inset 0 0 0 2px #8B5A2B",
+          }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={String(payload.url || "")}
             alt={String(payload.name || "Photo")}
-            className="h-full w-full rounded-[18px] object-cover"
+            className="h-full w-full rounded-[14px] object-cover"
             draggable={false}
           />
         </div>
@@ -162,24 +178,24 @@ export function BoardItemView({
 
       {item.type === "video" ? (
         <div
-          className={cn(
-            "h-full w-full overflow-hidden rounded-[20px] bg-white p-0.5",
-            cardShadow,
-            selected && selectedRing,
-          )}
+          className={cn("h-full w-full overflow-hidden rounded-[22px] p-2", selected && selectedRing)}
+          style={{
+            background: "linear-gradient(180deg, #d4b07a 0%, #b8894a 100%)",
+            boxShadow: "0 8px 0 rgba(90,60,20,0.2), inset 0 0 0 2px #8B5A2B",
+          }}
         >
           {payload.embed ? (
             <iframe
               src={String(payload.embed)}
               title="Video"
-              className="h-full w-full rounded-[18px]"
+              className="h-full w-full rounded-[14px]"
               allow="autoplay; encrypted-media"
             />
           ) : (
             <video
               src={String(payload.url || "")}
               controls
-              className="h-full w-full rounded-[18px] object-cover"
+              className="h-full w-full rounded-[14px] object-cover"
             />
           )}
         </div>
@@ -188,7 +204,7 @@ export function BoardItemView({
       {item.type === "audio" ? (
         <div
           className={cn(
-            "flex h-full items-center rounded-[20px] bg-white px-3",
+            "flex h-full items-center rounded-[999px] bg-[#FFFBE7] px-4",
             cardShadow,
             selected && selectedRing,
           )}
@@ -215,7 +231,7 @@ export function BoardItemView({
       ) : null}
 
       {selected && item.type !== "drawing" ? (
-        <span className="absolute right-0 bottom-0 size-3 cursor-nwse-resize rounded-sm bg-[#FF6B00]" data-resize="1" />
+        <span className="absolute right-1 bottom-1 size-3.5 cursor-nwse-resize rounded-full bg-[#F7CD67] ring-2 ring-[#FFFBE7]" data-resize="1" />
       ) : null}
     </div>
   )
