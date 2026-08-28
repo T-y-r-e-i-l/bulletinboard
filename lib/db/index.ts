@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { MEDIA_BUCKET } from "@/lib/constants"
-import { usesSupabaseAdmin } from "@/lib/flags"
+import { usesSupabaseAdmin, assertStoreConfigured } from "@/lib/flags"
 import { createAdminClient, createAnonServerClient } from "@/lib/supabase/server"
 import type { Board, BoardItem, NeighborDates } from "@/lib/types"
 import {
@@ -46,6 +46,7 @@ export async function ensureBoard(boardDate: string): Promise<Board> {
       .lt("board_date", boardDate)
     return data as Board
   }
+  assertStoreConfigured()
   return localEnsureBoard(boardDate)
 }
 
@@ -60,6 +61,7 @@ export async function getBoardByDate(boardDate: string) {
     if (error) throw error
     return (data as Board | null) ?? null
   }
+  assertStoreConfigured()
   return localGetBoardByDate(boardDate)
 }
 
@@ -70,6 +72,7 @@ export async function getBoard(id: string) {
     if (error) throw error
     return (data as Board | null) ?? null
   }
+  assertStoreConfigured()
   return localGetBoard(id)
 }
 
@@ -93,6 +96,7 @@ export async function neighborDates(boardDate: string): Promise<NeighborDates> {
       next: next?.[0]?.board_date ?? null,
     }
   }
+  assertStoreConfigured()
   return localNeighborDates(boardDate)
 }
 
@@ -107,6 +111,7 @@ export async function listItems(boardId: string) {
     if (error) throw error
     return (data ?? []) as BoardItem[]
   }
+  assertStoreConfigured()
   return localListItems(boardId)
 }
 
@@ -117,6 +122,7 @@ export async function getItem(id: string) {
     if (error) throw error
     return (data as BoardItem | null) ?? null
   }
+  assertStoreConfigured()
   return localGetItem(id)
 }
 
@@ -132,6 +138,7 @@ export async function maxZ(boardId: string) {
     if (error) throw error
     return data?.[0]?.z_index ?? 0
   }
+  assertStoreConfigured()
   return localMaxZ(boardId)
 }
 
@@ -144,6 +151,7 @@ export async function insertItem(item: Omit<BoardItem, "created_at" | "updated_a
     if (error) throw error
     return data as BoardItem
   }
+  assertStoreConfigured()
   return localInsertItem(full)
 }
 
@@ -154,6 +162,7 @@ export async function updateItem(id: string, patch: Partial<BoardItem>) {
     if (error) throw error
     return data as BoardItem
   }
+  assertStoreConfigured()
   return localUpdateItem(id, patch)
 }
 
@@ -166,6 +175,7 @@ export async function deleteItem(id: string) {
     if (error) throw error
     return existing
   }
+  assertStoreConfigured()
   return localDeleteItem(id)
 }
 
