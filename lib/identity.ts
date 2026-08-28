@@ -72,7 +72,7 @@ export function getClientIp(headers: Headers): string {
 }
 
 export function identityFromIp(ip: string) {
-  const secret = process.env.IDENTITY_SECRET || "publicpaste-dev-identity"
+  const secret = process.env["IDENTITY_SECRET"] || "publicpaste-dev-identity"
   const digest = createHmac("sha256", secret).update(ip).digest("hex")
   const animalIndex = Number.parseInt(digest.slice(0, 4), 16) % ANIMALS.length
   const hueIndex = Number.parseInt(digest.slice(4, 6), 16) % HUES.length

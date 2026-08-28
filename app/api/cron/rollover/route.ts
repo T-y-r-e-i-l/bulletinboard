@@ -3,7 +3,7 @@ import { todayInBoardTz } from "@/lib/dates"
 import { ensureBoard } from "@/lib/db"
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET
+  const secret = process.env["CRON_SECRET"]
   const auth = request.headers.get("authorization")
   if (secret && auth !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
