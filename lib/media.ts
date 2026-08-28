@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { randomUUID } from "node:crypto"
 import { MEDIA_BUCKET } from "@/lib/constants"
-import { usesSupabaseAdmin, assertStoreConfigured } from "@/lib/flags"
+import { usesSupabaseAdmin, assertStoreConfigured } from "@/lib/flags.server"
 import { createAdminClient } from "@/lib/supabase/server"
 
 export async function saveMedia(file: File, kind: "image" | "video" | "audio") {

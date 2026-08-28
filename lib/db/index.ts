@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { MEDIA_BUCKET } from "@/lib/constants"
-import { usesSupabaseAdmin, assertStoreConfigured } from "@/lib/flags"
+import { usesSupabaseAdmin, assertStoreConfigured } from "@/lib/flags.server"
 import { createAdminClient, createAnonServerClient } from "@/lib/supabase/server"
 import type { Board, BoardItem, NeighborDates } from "@/lib/types"
 import {
